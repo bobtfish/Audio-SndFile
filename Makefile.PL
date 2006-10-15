@@ -66,7 +66,7 @@ print "Testing for enums\n";
 my $cc = "$Config{cc} $flags";
 my $redir = "";
 if (-e "/dev/null") {
-# assume unix type redirection (not needed by makes the output a lot cleaner)
+# assume unix type redirection (not needed but makes the output a lot cleaner)
     $redir = " >/dev/null 2>&1";
 }
 
@@ -237,7 +237,7 @@ WriteMakefile(
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Audio/SndFile.pm', # retrieve abstract from module
-       AUTHOR         => 'Joost Diepenmaat <joodie@cpan.org>') : ()),
+       AUTHOR         => 'Joost Diepenmaat <jdiepen@cpan.org>') : ()),
     LIBS              => [split / /, $libs], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     INC               => "-I. $inc", # e.g., '-I. -I/usr/include/other'

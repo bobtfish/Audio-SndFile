@@ -22,7 +22,7 @@ use 5.008006;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -282,7 +282,7 @@ endianness is "file". See also L</FORMATS>
  my $bool       = $sndfile->seekable;
  my $frames     = $sndfile->frames;
 
-Read info from an Audio::SndFile object. See also L</FORMATS>
+Read info from an Audio::SndFile object. See also L</FORMATS> and L</Meta info>.
 
 =head2 Read audio data
 
@@ -323,7 +323,7 @@ a packed string.
 
  $sndfile->seek($offset, $whence);
 
-L<perlfunc/seek|seek()> to frame $offset. See also L<Fcntl>.
+Seek to frame $offset. See also L<Fcntl> and L<perlfunc/seek>.
 
 =head2 Errors
 
@@ -338,19 +338,35 @@ Return the last error as a number or string.
 
  my $libsndfile_version = Audio::SndFile::lib_version;
 
-Version of the libsndfile library linked by the module. Note that if you
-update your libsndfile you should also recompile this module if you want
-to take advantage of new formats provided by libsndfile.
+Version of the libsndfile library linked by the module.
+
+=head2 Meta info
+
+ my $title     = $sndfile->title();
+ my $copyright = $sndfile->copyright();
+ my $software  = $sndfile->software();
+ my $artist    = $sndfile->artist();
+ my $comment   = $sndfile->comment();
+ my $date      = $sndfile->date();
+
+Read metadata from $sndfile.
+
+ $sndfile->title($title);
+ $sndfile->copyright($copyright);
+ # etc.
+
+Set metadata for $sndfile. These methods are not supported
+for all filetypes.
 
 =head1 FORMATS
 
-The exact list of supported file types are dependend on your libsndfile version.
+The exact list of supported file types is dependend on your libsndfile version.
 When building this module it tries to figure out which types are available.
 File types that are not supported by your libsndfile at the time of building this
 module will not be available. In other words: recompile this module after
 upgrading your libsndfile.
 
-Supported file types (when avaiable) in this version of Audio::SndFile are:
+Supported file types (when available) in this version of Audio::SndFile are:
 
 wav, aiff, au, raw, paf, svx, nist, voc, ircam, w64, mat4, mat5, pvf, xi, htk, 
 sds, avr, wavex, sd2, flac, caf.
@@ -372,7 +388,7 @@ file, big, little, cpu.
 
 These map to SF_ENDIAN_$endianness in the C API.
 
-Note that not all combinations of type, subtype and endianness is supported.
+Note that not all combinations of type, subtype and endianness are supported.
 See also L<http://www.mega-nerd.com/libsndfile/#Features>.
 
 =head1 BUGS & ISSUES.
@@ -385,12 +401,30 @@ a decent way of using the sf_command() calls. This will be implemented later.
 
 There is currently no way to read seperate channels into seperate buffers.
 
+=head1 CHANGES
+
+=over 4
+
+=item v0.02
+
+Documentation updates.
+
+=item v0.01
+
+Initial version
+
+=back
+
 =head1 SEE ALSO 
 
 Erik de Castro Lopo's libsndfile page: L<http://www.mega-nerd.com/libsndfile/>
 
 L<Audio::SoundFile> - an old(er) interface to libsndfile. Doesn't build on
 my perl and looks incomplete.
+
+L<Audio::Play> - play audio and read/write .au files.
+
+L<Audio::LADSPA> - process audio streams using LADSPA plugins.
 
 =head1 AUTHOR
 
