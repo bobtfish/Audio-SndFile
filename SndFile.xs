@@ -2,6 +2,7 @@
  * Audio::SndFile - perl glue to libsndfile
  *
  * Copyright (C) 2006 by Joost Diepenmaat, Zeekat Softwareontwikkeling
+
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -241,15 +242,70 @@ lib_version()
     OUTPUT:
     RETVAL
 
+#ifdef SFC_GET_LOG_INFO
+
 SV*
 log_info(self)
     SNDFILE* self
     PREINIT:
-    char buff[2048];
+    SV* log;
+    int len;
     CODE:
-    sf_command(NULL, SFC_GET_LOG_INFO, buff, sizeof(buff));
-    RETVAL = newSVpv(buff,0);
+    log  = newSV( 4096 );
+    len = sf_command(self, SFC_GET_LOG_INFO, SvPVX(log) , SvLEN(log));
+    while ( len == SvLEN(log) ) {
+        SvGROW(log,SvLEN(log) + 4096);
+        len = sf_command(NULL, SFC_GET_LOG_INFO, SvPVX(log) , SvLEN(log));
+    }
+    SvLEN_set(log, len);
+    SvPOK_on(log);
+    RETVAL = log;
     OUTPUT:
     RETVAL
     
+#endif
+
+#ifdef SFC_FILE_TRUNCATE
+
+int
+truncate(self, frames)
+    SNDFILE* self
+    sf_count_t frames
+    CODE:
+    RETVAL = sf_command(self, SFC_FILE_TRUNCATE, &frames, sizeof(sf_count_t));
+
+#endif
+
+#ifdef SFC_SET_RAW_START_OFFSET
+
+int
+set_raw_start_offset(self, offset)
+    SNDFILE* self
+    sf_count_t offset
+    CODE:
+    RETVAL = sf_command(self, SFC_SET_RAW_START_OFFSET, &offset, sizeof(sf_count_t));
+
+#endif
+
+#ifdef SFC_SET_CLIPPING
+
+int
+set_clipping(self, boolean)
+    SNDFILE* self
+    int boolean
+    CODE:
+    RETVAL = sf_command(self, SFC_SET_CLIPPING, NULL, boolean ? SF_TRUE : SF_FALSE );
+
+#endif
+
+#ifdef SFC_GET_CLIPPING
+
+int
+get_clipping(self)
+    SNDFILE* self
+    CODE:
+    RETVAL = sf_command(self, SFC_GET_CLIPPING, NULL, 0 );
+
+#endif
+
 

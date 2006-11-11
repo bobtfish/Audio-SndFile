@@ -23,7 +23,8 @@ use ExtUtils::MakeMaker;
 use Config;
 $|=1;
 print "Testing for sndfile via pkg-config...";
-system("pkg-config sndfile") and die "Can't find pkg-config or sndfile development file not installed.
+system("pkg-config sndfile") and die "
+Can't find pkg-config or sndfile development file not installed.
 Please make sure you've installed pkg-config and libsndfile-dev
 
 Recent linux distributions should have both as packages. Otherwise,
@@ -75,7 +76,7 @@ open F,">","constants.xs" or die "Can't write constants.xs: $!";
 print F $boiler;
 for (@Audio::SndFile::Constants::EXPORT_OK) {
     print "$_ ...";
-    open C,">constant-test.c" or die "Can't write constant-test.c: $!";
+    open C,">test.c" or die "Can't write test.c: $!";
     print C qq(
 #include <sndfile.h>
 #include <stdio.h>
@@ -84,7 +85,7 @@ int main() {
 }
 );
     close C;
-    if (system("$cc constant-test.c$redir") == 0) {
+    if (system("$cc test.c$redir") == 0) {
         print "found\n";
         print F qq(
 int
@@ -105,22 +106,107 @@ print "\n";
 if (@not_found) {
     print "You are missing @not_found.\n";
     if (grep { !/^SF_FORMAT_/ } @not_found) {
-        print "You are missing some expected constants.\nIf building this module fails, you might want to upgrade to a more recent version of libsndfile\n";
+        print "You are missing some expected constants.
+If building this module fails, you might want to upgrade to a more 
+recent version of libsndfile
+";
     }
     else {
-        print "Some filetypes are not supported by your version of libsndfile.\nOtherwise you will probably be alright.\n";
+        print "Some filetypes are not supported by your version of libsndfile.
+Otherwise you will probably be alright.
+";
     }
 }
 else {
-    print "Good. You've got all constants I know about\n";
+    print "Good. You've got all formats I know about\n";
 }
 
 my %nf = map { $_ => 1 } @not_found;
+my (@define,@fnotfound);
 
-print "\nSupported types: ",join(", ",map { s/^SF_FORMAT_//; lc $_ } grep { !$nf{$_} } @Audio::SndFile::Constants::FORMAT_TYPES),"\n\n";
-print "Supported subtypes: ",join(", ",map { s/^SF_FORMAT_//; lc $_ } grep { !$nf{$_} } @Audio::SndFile::Constants::FORMAT_SUBTYPES),"\n\n";
+print "Testing functions...\n";
+my %test_functions = (
+    sf_write_sync => "sf_write_sync(&sndfile);"
+);
+for (sort keys %test_functions) {
+    print "$_...";
+    open C,">test.c" or die "Can't write test.c: $!";
+    print C qq{
+#include <sndfile.h>
+#include <stdio.h>
+int main() {
+    SNDFILE sndfile;
+    $test_functions{$_}
+}
+    };
+    close C;
+    if (system("$cc test.c$redir") == 0) {
+        print "found\n";
+        push @define,"-D$_=$_";
+    }
+    else {
+        push @fnotfound,$_;
+        print "not found\n";
+    }
+}
 
+my (@cfound, @cnotfound);
+print "Testing for commands...\n";
+for (qw(SFC_GET_LOG_INFO SFC_CALC_SIGNAL_MAX SFC_CALC_NORM_SIGNAL_MAX SFC_CALC_MAX_ALL_CHANNELS
+        SFC_CALC_NORM_MAX_ALL_CHANNELS SFC_GET_SIGNAL_MAX SFC_GET_MAX_ALL_CHANNELS
+        SFC_SET_NORM_FLOAT SFC_SET_NORM_DOUBLE SFC_GET_NORM_FLOAT SFC_GET_NORM_DOUBLE
+        SFC_SET_SCALE_FLOAT_INT_READ SFC_GET_SIMPLE_FORMAT_COUNT SFC_GET_SIMPLE_FORMAT
+        SFC_GET_FORMAT_INFO SFC_GET_FORMAT_MAJOR_COUNT SFC_GET_FORMAT_MAJOR SFC_GET_FORMAT_SUBTYPE_COUNT
+        SFC_GET_FORMAT_SUBTYPE SFC_SET_ADD_PEAK_CHUNK SFC_UPDATE_HEADER_NOW SFC_SET_UPDATE_HEADER_AUTO
+        SFC_FILE_TRUNCATE SFC_SET_RAW_START_OFFSET SFC_SET_CLIPPING SFC_GET_CLIPPING
+        SFC_GET_EMBED_FILE_INFO)) {
+    print "$_...";
+    open C,">test.c" or die "Can't write test.c: $!";
+    print C qq(
+#include <sndfile.h>
+#include <stdio.h>
+int main() {
+    printf("$_=%d\\n",$_);
+    return 0;
+}
+);
+    close C;
+    if (system("$cc test.c$redir") == 0) {
+        print "found\n";
+        push @define,"-D$_=$_";
+        push @cfound,$_;
+    }
+    else {
+        print "not found\n";
+        push @cnotfound,$_;
+    }
+}
 
+print "\nSupported types: ",(join(", ",map { s/^SF_FORMAT_//; lc $_ } 
+    grep { !$nf{$_} } @Audio::SndFile::Constants::FORMAT_TYPES) || "*none*") ,"\n";
+
+print "Supported subtypes: ",(join(", ",map { s/^SF_FORMAT_//; lc $_ } 
+    grep { !$nf{$_} } @Audio::SndFile::Constants::FORMAT_SUBTYPES) || "*none*") ,"\n";
+
+print "Supported commands: ",(join(", ", map { s/SFC_//; lc($_) } @cfound) || "*none*"),"\n\n";
+
+print "Unsupported types: ",(join(", ",map { s/^SF_FORMAT_//; lc $_ } 
+    grep { $nf{$_} } @Audio::SndFile::Constants::FORMAT_TYPES) || "*none*" ),"\n";
+print "Unsupported subtypes: ",(join(", ",map { s/^SF_FORMAT_//; lc $_ } 
+    grep { $nf{$_} } @Audio::SndFile::Constants::FORMAT_SUBTYPES) || "*none*"),"\n";
+
+if (@fnotfound) {
+    print "Unsupported misc. functions: ",join(", ",@fnotfound),"\n";
+}
+else {
+    print "Misc. functions all supported\n";
+}
+if (@cnotfound) {
+    print "Unsupported commands: ",join(", ", map { s/SFC_//; lc $_ } @cnotfound),"\n";
+}
+else {
+    print "All commands supported.\n";
+}
 #
 # save me from repetitive coding. 
 # 
@@ -208,6 +294,9 @@ set_$_(self, $_)
 
 for(qw(calc_signal_max calc_norm_signal_max)) {
     print F qq(
+
+#ifdef SFC_\U$_\E
+
 double
 $_(self)
     SNDFILE* self
@@ -215,6 +304,8 @@ $_(self)
     if (sf_command( self, SFC_\U$_\E, &RETVAL, sizeof(RETVAL)) != 0) croak("Error calculating $_");
     OUTPUT:
     RETVAL
+
+#endif
 );
 }
 
@@ -239,7 +330,7 @@ WriteMakefile(
       (ABSTRACT_FROM  => 'lib/Audio/SndFile.pm', # retrieve abstract from module
        AUTHOR         => 'Joost Diepenmaat <jdiepen@cpan.org>') : ()),
     LIBS              => [split / /, $libs], # e.g., '-lm'
-    DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
+    DEFINE            => join(" ",@define), # e.g., '-DHAVE_SOMETHING'
     INC               => "-I. $inc", # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     # OBJECT            => '$(O_FILES)', # link all the C files too

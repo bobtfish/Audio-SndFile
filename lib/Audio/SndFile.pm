@@ -22,7 +22,7 @@ use 5.008006;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -150,6 +150,11 @@ for my $type (keys %pack) {
  
 }
 
+sub clipping {
+    my $self = shift;
+    @_ ? $self->set_clipping(@_) : $self->get_clipping;
+}
+
 
 package Audio::SndFile::Info;
 use Audio::SndFile::Constants ":all";
@@ -235,7 +240,7 @@ __END__
 
 =head1 NAME
 
-Audio::SndFile - Portable reading and writing of audio files
+Audio::SndFile - Portable reading and writing of sound files
 
 =head1 SYNOPSIS
 
@@ -253,9 +258,9 @@ Audio::SndFile - Portable reading and writing of audio files
 =head1 DESCRIPTION
 
 Audio::SndFile is a perl interface to the sndfile library and provides a portable
-API for reading and writing audio data in different formats.
+API for reading and writing sound files in different formats.
 
-=head1 API
+=head1 Reading & Writing
 
 =head2 Constructor
 
@@ -267,22 +272,89 @@ $mode can be "<" (read), ">" (write) or "+<" (read/write)
 
 $file is a filehandle or filename.
 
-%options: if you're opening a file write-only, you should specify
-at least the options "type", "subtype" and "channels". The default
-endianness is "file". See also L</FORMATS>
+=head3 %options
 
-=head2 File info
+A list of name => value pairs. All required when reading raw data.
+Most are required when opening a file write-only.
+
+=over 4
+
+=item type
+
+The major filetype. Required when opening a file write-only.
+
+=item subtype
+
+The representation of data in the file. Required when opening a file write-only.
+
+=item channels
+
+The number of channels. Required when opening a file write-only.
+
+=item endianness
+
+The endianness of the data in the file.
+
+=item samplerate
+
+The samplerate for this file.
+
+=back
+
+The available values for type, subtype and endianness are listed in L</FORMATS>.
+
+Examples:
+
+ # open for reading; no options are needed for non-raw
+ # soundfiles:
+
+ my $infile = Audio::SndFile->open("<","/tmp/test.wav");
+
+ # open for writing, you need type, subtype & channels options:
+ 
+ my $outfile = Audio::SndFile->open(">","/tmp/out.wav",
+                                    type     => "wav",
+                                    subtype  => "pcm_16",
+                                    channels => 2);
+
+=head2 Audio info
+
+Information about the sound data is available from the Audio::SndFile object.
 
  my $type       = $sndfile->type;
  my $subtype    = $sndfile->subtype;
  my $endianness = $sndfile->endianness;
  my $channels   = $sndfile->channels;
  my $samplerate = $sndfile->samplerate;
- my $sections   = $sndfile->sections;
- my $bool       = $sndfile->seekable;
- my $frames     = $sndfile->frames;
 
-Read info from an Audio::SndFile object. See also L</FORMATS> and L</Meta info>.
+These are the same as the L<open() options|%options>. The following
+are also available:
+
+ my $sections   = $sndfile->sections;   # number of sections
+ my $bool       = $sndfile->seekable;   # is this stream/file seekable
+ my $frames     = $sndfile->frames;     # number of frames
+
+See also L</FORMATS> and L</Meta info>.
+
+=head2 Meta info
+
+Additional metadata
+
+ my $title     = $sndfile->title();
+ my $copyright = $sndfile->copyright();
+ my $software  = $sndfile->software();
+ my $artist    = $sndfile->artist();
+ my $comment   = $sndfile->comment();
+ my $date      = $sndfile->date();
+
+Read metadata from $sndfile. When given an argument, set the metadata
+on a $sndfile:
+
+ $sndfile->title($title);
+ $sndfile->copyright($copyright);
+ # etc.
+
+These methods are not supported for all filetypes.
 
 =head2 Read audio data
 
@@ -319,11 +391,43 @@ written.
 Same as write_TYPE and writef_TYPE but these take a list of values instead of
 a packed string.
 
+=head1 Other file operations
+
 =head2 Seek
 
  $sndfile->seek($offset, $whence);
 
 Seek to frame $offset. See also L<Fcntl> and L<perlfunc/seek>.
+
+=head2 Sync
+
+ $sndfile->write_sync();
+
+Flush data to disk if $sndfile is opened for writing. This function
+is not available in libsndfile prior to 2006-07-31 / release 1.0.17.
+
+You can use C<< $sndfile->can('write_sync') >> to test for it.
+
+=head2 Truncate
+
+ $sndfile->truncate($number_of_frames);
+
+Truncate file to $number_of_frames.
+
+Implemented via sf_command().
+
+=head1 Conversion parameters
+
+=head2 Clipping
+
+ $sndfile->clipping($bool);
+ my $bool = $sndfile->clipping;
+
+Get or set automatic clipping for float -> integer conversions.
+
+Implemented via sf_command().
+
+=head1 Other methods  
 
 =head2 Errors
 
@@ -340,23 +444,7 @@ Return the last error as a number or string.
 
 Version of the libsndfile library linked by the module.
 
-=head2 Meta info
-
- my $title     = $sndfile->title();
- my $copyright = $sndfile->copyright();
- my $software  = $sndfile->software();
- my $artist    = $sndfile->artist();
- my $comment   = $sndfile->comment();
- my $date      = $sndfile->date();
-
-Read metadata from $sndfile.
-
- $sndfile->title($title);
- $sndfile->copyright($copyright);
- # etc.
-
-Set metadata for $sndfile. These methods are not supported
-for all filetypes.
+Implemented via sf_command().
 
 =head1 FORMATS
 
@@ -391,19 +479,36 @@ These map to SF_ENDIAN_$endianness in the C API.
 Note that not all combinations of type, subtype and endianness are supported.
 See also L<http://www.mega-nerd.com/libsndfile/#Features>.
 
+=head1 SF_COMMAND, LIBSNDFILE VERSIONS & API CHANGES
+
+As noted in L</FORMATS>, the supported file formats are dependent on the
+version of libsndfile that is installed I<at the time of building this module>.
+
+This is also true for the methods implemented via sf_command() and the 
+write_sync() method. Available methods are detected by Makefile.PL at build time.
+
+Methods implemented via sf_command() are noted in the documentation. Other
+methods, except for write_sync() should be available everywhere, since this
+module won't build if they're not available.
+
 =head1 BUGS & ISSUES.
 
 Currenly there are no I<known> bugs, but this code is new and not very well
 tested.
 
-This module does not implement the full libsndfile API. Notably missing is
-a decent way of using the sf_command() calls. This will be implemented later.
+This module does not implement the full libsndfile API. Notably missing are
+most of the sf_command() calls. They will be implemented later.
 
 There is currently no way to read seperate channels into seperate buffers.
 
 =head1 CHANGES
 
 =over 4
+
+=item v0.03
+
+Added write_sync() method. Added some sf_command() methods.
+Documentation updates.
 
 =item v0.02
 
