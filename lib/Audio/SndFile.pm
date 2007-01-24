@@ -18,11 +18,11 @@
 
 package Audio::SndFile;
 
-use 5.008006;
+use 5.008;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -504,6 +504,11 @@ There is currently no way to read seperate channels into seperate buffers.
 =head1 CHANGES
 
 =over 4
+
+=item v0.04
+
+Pushed the required perl version back to v5.8.0. If this breaks anything,
+please let me know.
 
 =item v0.03
 
