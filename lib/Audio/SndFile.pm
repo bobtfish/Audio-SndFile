@@ -22,7 +22,7 @@ use 5.008;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -92,7 +92,7 @@ sub DESTROY {
 }
 
 
-for my $s (qw(type subtype channels endianness samplerate seekable sections)) {
+for my $s (qw(type subtype frames channels endianness samplerate seekable sections)) {
     no strict 'refs';
     *{$s} = sub {
         my $self = shift;
@@ -504,6 +504,11 @@ There is currently no way to read seperate channels into seperate buffers.
 =head1 CHANGES
 
 =over 4
+
+=item v0.05
+
+Made the frames() method work and added regression test. 
+Thanks to zergen for the bug report.
 
 =item v0.04
 

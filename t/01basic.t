@@ -1,6 +1,6 @@
 #!perl -w
 use strict;
-use Test::More tests => 14;
+use Test::More tests => 15;
 BEGIN {
     use_ok("Audio::SndFile");
 }
@@ -14,6 +14,7 @@ is($sndfile->channels,1,"channels");
 is($sndfile->samplerate,44100,"samplerate");
 is($sndfile->sections,1,"sections");
 is($sndfile->seekable,1,"seekable");
+is($sndfile->frames,71992,"frames");
 
 my $buff = "";
 is($sndfile->read_raw($buff,20),20,"read_raw length");
