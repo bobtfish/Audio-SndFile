@@ -37,10 +37,12 @@ my $sndversion = `pkg-config --modversion sndfile`;
 my ($major,$medium,$minor) = split /\./,$sndversion;
 die "This module is made for libsndfile versions 1.X.X. You have $sndversion\n" if ($major != 1);
 
-my $flags = `pkg-config --cflags --libs sndfile`;
-chomp $flags;
-(my $libs = $flags) =~ s/-I\S+\s*//g;
-(my $inc = $flags) =~ s/-l\S+\s*//ig;
+chomp(my $flags = `pkg-config --cflags --libs sndfile`);
+chomp(my $inc = `pkg-config --cflags sndfile`);
+chomp(my $libs = `pkg-config --libs sndfile`);
+
+
+warn "According to pkg-config, LIBS should be '$libs' and INC should be '$inc'\n";
 
 BEGIN {
     require 'lib/Audio/SndFile/Constants.pm';
@@ -329,7 +331,7 @@ WriteMakefile(
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Audio/SndFile.pm', # retrieve abstract from module
        AUTHOR         => 'Joost Diepenmaat <jdiepen@cpan.org>') : ()),
-    LIBS              => [split / /, $libs], # e.g., '-lm'
+    LIBS              => [$libs], # e.g., '-lm'
     DEFINE            => join(" ",@define), # e.g., '-DHAVE_SOMETHING'
     INC               => "-I. $inc", # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:

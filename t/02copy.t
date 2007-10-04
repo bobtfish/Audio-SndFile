@@ -30,6 +30,8 @@ while (my $len = $infile->read_int($buffer,1024)) {
     die "bufferlen (".length($buffer)." * $Config{intsize}) != $len" if length($buffer) != $len * $Config{intsize};
     $outfile->write_int($buffer);
 }
+
+
 $infile->close;
 $outfile->close;
 

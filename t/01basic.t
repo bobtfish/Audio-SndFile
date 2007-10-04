@@ -1,6 +1,6 @@
 #!perl -w
 use strict;
-use Test::More tests => 15;
+use Test::More tests => 17;
 BEGIN {
     use_ok("Audio::SndFile");
 }
@@ -24,4 +24,7 @@ is($sndfile->readf_float($buff,10),10,"Readf length");
 
 my @vals = $sndfile->unpack_float(20);
 is(scalar @vals, 20,"unpack length");
+
+is($sndfile->comment,undef);
+is($sndfile->artist,undef);
 

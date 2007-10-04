@@ -1,4 +1,5 @@
-/*
+/* hey emacs, this is a -*- C -*- file
+ *
  * Audio::SndFile - perl glue to libsndfile
  *
  * Copyright (C) 2006 by Joost Diepenmaat, Zeekat Softwareontwikkeling

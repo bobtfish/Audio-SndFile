@@ -22,7 +22,7 @@ use 5.008;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -100,13 +100,13 @@ for my $s (qw(type subtype frames channels endianness samplerate seekable sectio
     }
 }
 
-for (qw(title copyright software artist comment date)) {
-    no strict 'refs';
-    *{$_} = sub {
-        my $self = shift;
-        my $method = @_ ? "set_$_" : "get_$_";
-        $self->$method(@_);
-    };
+for my $s (qw(title copyright software artist comment date)) {
+  no strict 'refs';
+  *{$s} = sub {
+    my $self = shift;
+    my $method = @_ ? "set_$s" : "get_$s";
+    $self->$method(@_);
+  };
 }
 
 my %pack = (
@@ -257,7 +257,7 @@ Audio::SndFile - Portable reading and writing of sound files
 
 =head1 DESCRIPTION
 
-Audio::SndFile is a perl interface to the sndfile library and provides a portable
+Audio::SndFile is a perl interface to the sndfile (soundfile) library and provides a portable
 API for reading and writing sound files in different formats.
 
 =head1 Reading & Writing
@@ -504,6 +504,16 @@ There is currently no way to read seperate channels into seperate buffers.
 =head1 CHANGES
 
 =over 4
+
+=item v0.06
+
+Fixed Makefile.PL to use LIBS correctly. Amongst other things, that means
+that it's now possible to build the module if your libsndfile shared library
+is in a non-standard location.
+
+(get_/set_)artist, comment etc *should* now work, but need some serious testing.
+
+Thanks to Paul Seelig for reporting the issues and helping me find the solution.
 
 =item v0.05
 
