@@ -6,6 +6,7 @@ MANIFEST.SKIP
 SndFile.xs
 t/01basic.t
 t/02copy.t
+t/03errors.t
 t/test.wav
 typemap
 COPYING

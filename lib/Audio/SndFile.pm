@@ -18,11 +18,11 @@
 
 package Audio::SndFile;
 
-use 5.008;
+use 5.006;
 use strict;
 use warnings;
 use Carp qw(croak);
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 use Fcntl;
 require XSLoader;
 XSLoader::load('Audio::SndFile', $VERSION);
@@ -67,6 +67,9 @@ sub open {
     }
     if ($nmode == SFM_WRITE && ! $info->format_check()) {
         croak "Invalid format for writing";
+    }
+    elsif ($nmode == SFM_WRITE && ! $info->samplerate) {
+      croak "No samplerate specified";
     }
     my $fh;
     if (ref $filename) {
@@ -505,6 +508,13 @@ There is currently no way to read seperate channels into seperate buffers.
 
 =over 4
 
+=item v0.07
+
+Noticed that installation was aborting on systems with perl < 5.8.6. Moved
+minimum required version to 5.6.0 in all files. Let's see what breaks.
+
+Fixed http://rt.cpan.org/Public/Bug/Display.html?id=32318
+
 =item v0.06
 
 Fixed Makefile.PL to use LIBS correctly. Amongst other things, that means
@@ -522,7 +532,7 @@ Thanks to zergen for the bug report.
 
 =item v0.04
 
-Pushed the required perl version back to v5.8.0. If this breaks anything,
+Pushed the required perl version back to v5.6.0. If this breaks anything,
 please let me know.
 
 =item v0.03

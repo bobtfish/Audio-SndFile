@@ -16,20 +16,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-use 5.008006;
+use 5.006;
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 use Config;
 $|=1;
+print "Testing for pkg-config...\n";
+
+system("pkg-config --version") and die "You don't have pkg-config installed.
+You can get pkg-config at http://pkgconfig.freedesktop.org/wiki/
+";
+
+
 print "Testing for sndfile via pkg-config...";
 system("pkg-config sndfile") and die "
-Can't find pkg-config or sndfile development file not installed.
-Please make sure you've installed pkg-config and libsndfile-dev
+Can't find sndfile development files not installed.
+Please make sure you've installed libsndfile and libsndfile-dev
 
-Recent linux distributions should have both as packages. Otherwise,
-you can find libsndfile at http://www.mega-nerd.com/libsndfile/ and
-pkg-config at http://pkgconfig.freedesktop.org/wiki/
+Recent linux distributions should have them as packages. Otherwise,
+you can find libsndfile at http://www.mega-nerd.com/libsndfile/
+
 ";
 print "ok\n";
 
