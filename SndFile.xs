@@ -164,7 +164,7 @@ open_fd(package, fd, mode, info,close)
     if(!self) croak("Error allocating Audio_SndFile struct");
     self->info = info;
     self->sndfile = sf_open_fd(fd,mode,info,close);
-    if(!self->sndfile) croak("Error opening filehandle: %s",sf_error(NULL));
+    if(!self->sndfile) croak("Error opening filehandle: %s",sf_strerror(NULL));
     RETVAL = to_obj(package,self);
     OUTPUT:
     RETVAL
